@@ -1,0 +1,41 @@
+pipeline {
+   agent any
+   environment {
+       IMAGE_NAME = "nginx:latest"
+       TRIVY_OUTPUT = "trivy_report.txt"
+   }
+   stages {
+       stage('Pull Docker Image') {
+           steps {
+               script {
+                   // Pull the Docker image to scan
+                   sh "docker pull $IMAGE_NAME"
+               }
+           }
+       }
+       stage('Run Trivy Scan') {
+           steps {
+               script {
+                   echo "Running Trivy scan on Docker image: $IMAGE_NAME"
+                   // Run Trivy scan and export the report to a file
+                   sh "trivy image --severity HIGH,CRITICAL --format table $IMAGE_NAME > $TRIVY_OUTPUT || true"
+               }
+           }
+       }
+       stage('Display Trivy Report') {
+           steps {
+               script {
+                   // Display the Trivy scan report in the console
+                   echo "Trivy Scan Report:"
+                   sh "cat $TRIVY_OUTPUT"
+               }
+           }
+       }
+   }
+   post {
+       always {
+           echo "Pipeline completed. Cleaning up workspace."
+           cleanWs()  // Optional: Clean the workspace after the build completes
+       }
+   }
+}
