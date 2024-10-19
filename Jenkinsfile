@@ -12,7 +12,7 @@ pipeline {
        stage('Install Dependencies') {
            steps {
                script {
-                   // Ensure terrascan is available
+                   // Ensure Terrascan is available or print a warning
                    sh 'which terrascan || echo "Terrascan is not installed!"'
                }
            }
@@ -21,20 +21,17 @@ pipeline {
            steps {
                script {
                    echo "Running Terrascan..."
+                   // Perform the scan and export the output to a file
                    sh 'terrascan scan -o json > $TERRASCAN_OUTPUT || true'
                }
            }
        }
-       stage('Archive Results') {
-           steps {
-               archiveArtifacts artifacts: "$TERRASCAN_OUTPUT", allowEmptyArchive: true
-           }
-       }
-       stage('Display Terrascan Results') {
+       stage('Display Report') {
            steps {
                script {
-                   def scanResults = readFile("$TERRASCAN_OUTPUT")
-                   echo "Terrascan Report:\n${scanResults}"
+                   // Display the contents of the Terrascan report in the Jenkins console
+                   echo "Terrascan Report:"
+                   sh "cat $TERRASCAN_OUTPUT"
                }
            }
        }
@@ -42,8 +39,7 @@ pipeline {
    post {
        always {
            echo "Pipeline completed. Cleaning up workspace."
-           cleanWs()
+           cleanWs()  // Optional: Cleans the workspace after the build completes
        }
    }
 }
-has context menu
