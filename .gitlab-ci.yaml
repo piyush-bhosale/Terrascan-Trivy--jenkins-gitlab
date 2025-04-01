@@ -1,0 +1,30 @@
+stages:
+  - scan
+
+terrascan_scan:
+  stage: scan
+  image: alpine:3.18
+  script:
+    - echo "📦 Installing dependencies..."
+    - apk add --no-cache curl unzip bash
+    - echo "⬇️ Downloading Terrascan..."
+    - curl -L https://github.com/tenable/terrascan/releases/latest/download/terrascan_Linux_x86_64.zip -o terrascan.zip
+    - unzip terrascan.zip -d /usr/local/bin/
+    - chmod +x /usr/local/bin/terrascan
+    - terrascan version
+    - echo "🔍 Scanning Terraform files in current directory..."
+    - terrascan scan -t aws -i terraform -o json > terrascan-report.json
+    - |
+      if grep -q '"violation"' terrascan-report.json; then
+        echo "❌ Terrascan found policy violations. Failing the pipeline..."
+        cat terrascan-report.json
+        exit 1
+      else
+        echo "✅ No violations found. Terrascan scan passed."
+      fi
+  artifacts:
+    when: always
+    paths:
+      - terrascan-report.json
+    expire_in: 1 day
+  allow_failure: false
